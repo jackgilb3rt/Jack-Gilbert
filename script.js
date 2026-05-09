@@ -414,6 +414,38 @@
   // ======================================================================
   // ANALYSIS
   // ======================================================================
+  // FNV-1a hash over a fixed 16x16 sample grid. Same photo -> same hash.
+  // Two visually distinct photos get distinct hashes (different bits flipped),
+  // which we feed into a seeded PRNG to produce per-photo variance channels.
+  function photoHash(data, W, H) {
+    let h = 2166136261 >>> 0;
+    for (let gy = 0; gy < 16; gy++) {
+      for (let gx = 0; gx < 16; gx++) {
+        const x = Math.floor((gx + 0.5) * W / 16);
+        const y = Math.floor((gy + 0.5) * H / 16);
+        const i = (y * W + x) * 4;
+        // top 4 bits per channel — robust to JPEG noise
+        const v = (data[i] >> 4) | ((data[i+1] >> 4) << 4) | ((data[i+2] >> 4) << 8);
+        h = (h ^ v) >>> 0;
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+    }
+    return h >>> 0;
+  }
+
+  // mulberry32 — small fast deterministic PRNG seeded by an int.
+  // Each call() returns an independent uniform 0..1 number.
+  function makeRng(seed) {
+    let s = seed >>> 0;
+    return function() {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = s;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
   function extractFeatures(img) {
     const ctx = workCanvas.getContext('2d', { willReadFrequently: true });
     const W = workCanvas.width, H = workCanvas.height;
@@ -454,7 +486,9 @@
       }
     }
 
-    if (n === 0) return { luminance: .5, saturation: .5, flush: 0, warmth: 0, pink: 0, sharpness: .5, blur: .5 };
+    const hash = photoHash(data, W, H);
+
+    if (n === 0) return { luminance: .5, saturation: .5, flush: 0, warmth: 0, pink: 0, sharpness: .5, blur: .5, hash };
 
     const rAvg = rSum/n, gAvg = gSum/n, bAvg = bSum/n;
     return {
@@ -464,18 +498,40 @@
       warmth:     (warm-cool)/n,
       pink:       pink/n,
       sharpness:  Math.min(1, (edgeSum/eN)/40),
-      blur:       1 - Math.min(1, (edgeSum/eN)/40)
+      blur:       1 - Math.min(1, (edgeSum/eN)/40),
+      hash
     };
   }
 
   function scoreFeatures(f, refs) {
-    const flush     = clamp(f.flush * 4 + f.pink * 2.5, 0, 1);
-    const eyeDroop  = clamp((1 - f.luminance) * 0.5 + (1 - f.sharpness) * 0.6, 0, 1);
+    // ---- Recalibrated feature components (target: cluster around 0.5) ----
+    // Old math sent every warm/dim phone photo to ~0.85 raw, locking us at
+    // 8/9. New math: gentler scaling so a "typical" photo lands mid-range
+    // and the hash channel below provides the actual spread.
+    const flush     = clamp(f.flush * 2.5 + f.pink * 1.0, 0, 1);
+    const eyeDroop  = clamp((1 - f.sharpness) * 0.6 + (1 - f.luminance) * 0.3, 0, 1);
     const stability = clamp(f.blur, 0, 1);
-    const vibe      = clamp((f.warmth + 1)/2 * 0.6 + f.saturation * 0.4, 0, 1);
+    const vibe      = clamp(((f.warmth + 1)/2) * 0.55 + f.saturation * 0.45 - 0.15, 0, 1);
 
-    let raw = flush * 0.40 + eyeDroop * 0.20 + stability * 0.20 + vibe * 0.20;
+    const featRaw = clamp(flush*0.30 + eyeDroop*0.25 + stability*0.20 + vibe*0.25, 0, 1);
 
+    // ---- Per-photo independent variance channels ------------------------
+    // Same photo -> same channels (deterministic). Different photo -> totally
+    // different draws, so two similar-looking photos land at e.g. 3 vs 8.
+    const rng = makeRng(f.hash || 0);
+    const drunkN = rng();
+    const tweakN = rng();
+    const vibeN  = rng();
+    const copeN  = rng();
+    const rizzN  = rng();
+    const mogN   = rng();
+
+    // ---- Main DRUNK score: 35% features + 65% per-photo channel --------
+    // Then a 1.4x stretch around 0.5 so the tails (1s and 10s) are reachable.
+    let raw = featRaw * 0.35 + drunkN * 0.65;
+    raw = clamp(0.5 + (raw - 0.5) * 1.4, 0, 1);
+
+    // ---- Reference-photo pull (if user has calibrated) -----------------
     let matched = null;
     if (refs.length) {
       let best = null;
@@ -486,65 +542,33 @@
       matched = best.r;
       const refNorm = (matched.score - 1) / 9;
       const closeness = Math.max(0, 1 - best.d * 1.4);
-      const refWeight = 0.35 + closeness * 0.45;
+      const refWeight = 0.25 + closeness * 0.35; // 0.25..0.60 (lighter pull so variety survives)
       raw = raw * (1 - refWeight) + refNorm * refWeight;
     }
 
-    const score = Math.max(1, Math.min(10, Math.round(raw * 9 + 1)));
+    const score = oneToTen(raw);
 
-    // ----- Sub-scores: independent axes derived from features -------------
-    // TWEAK = sharp + saturated + bright (the "wired but not drunk" axis)
-    const tweakRaw = clamp(
-      f.sharpness * 0.45 +
-      f.saturation * 0.25 +
-      Math.max(0, f.luminance - 0.5) * 0.6 +
-      f.flush * 0.10,
-      0, 1
-    );
-    // VIBE (aura) = warmth + saturation, peaks at mid-luminance
-    const vibeRaw = clamp(
-      ((f.warmth + 1) / 2) * 0.45 +
-      f.saturation * 0.4 +
-      (1 - Math.abs(f.luminance - 0.55) * 1.6) * 0.15,
-      0, 1
-    );
-    // COPE = composure: low flush + sharp = "trying to look fine"
-    const copeRaw = clamp(
-      (1 - flush) * 0.55 +
-      f.sharpness * 0.35 +
-      (1 - eyeDroop) * 0.10,
-      0, 1
-    );
-    // RIZZ = mid-flush + warm + saturated, modest randomness for spice
+    // ---- Sub-rating bases (feature-derived, per category) --------------
+    const tweakBase = clamp(
+      f.sharpness * 0.45 + f.saturation * 0.25 + Math.max(0, f.luminance - 0.5) * 0.50, 0, 1);
+    const vibeBase = clamp(
+      ((f.warmth + 1)/2) * 0.40 + f.saturation * 0.40 + (1 - Math.abs(f.luminance - 0.55) * 1.4) * 0.20, 0, 1);
+    const copeBase = clamp(
+      (1 - flush) * 0.55 + f.sharpness * 0.35 + (1 - eyeDroop) * 0.10, 0, 1);
     const rizzBase = clamp(
-      (1 - Math.abs(flush - 0.32)) * 0.45 +
-      f.saturation * 0.30 +
-      ((f.warmth + 1) / 2) * 0.25,
-      0, 1
-    );
-    // Seed rizz randomness from feature hash so same photo gives same rizz
-    const seed = Math.abs(Math.sin(
-      (f.flush + f.warmth + f.saturation + f.luminance) * 1000
-    ));
-    const rizzRaw = clamp(rizzBase * 0.85 + seed * 0.15, 0, 1);
+      (1 - Math.abs(flush - 0.32)) * 0.40 + f.saturation * 0.30 + ((f.warmth + 1)/2) * 0.30, 0, 1);
+    const mogBase = clamp(
+      f.saturation * 0.30 + ((f.warmth + 1)/2) * 0.30 + f.sharpness * 0.25 +
+      Math.max(0, 0.40 - Math.abs(flush - 0.35)) * 0.40, 0, 1);
 
-    // MOG = aura presence — saturation + warmth + sharpness + a touch of flush
-    // Big, warm, in-focus, flushed-but-not-too-flushed faces dominate the frame.
-    const mogRaw = clamp(
-      f.saturation * 0.30 +
-      ((f.warmth + 1) / 2) * 0.30 +
-      f.sharpness * 0.25 +
-      Math.max(0, 0.4 - Math.abs(flush - 0.35)) * 0.4 +
-      seed * 0.1,
-      0, 1
-    );
-
+    // Heavy hash weighting on sub-ratings — they're vibes, not science.
+    // 35% feature-derived + 65% per-channel hash variance.
     const subs = {
-      tweak: oneToTen(tweakRaw),
-      vibe:  oneToTen(vibeRaw),
-      cope:  oneToTen(copeRaw),
-      rizz:  oneToTen(rizzRaw),
-      mog:   oneToTen(mogRaw)
+      tweak: oneToTen(tweakBase * 0.35 + tweakN * 0.65),
+      vibe:  oneToTen(vibeBase  * 0.35 + vibeN  * 0.65),
+      cope:  oneToTen(copeBase  * 0.35 + copeN  * 0.65),
+      rizz:  oneToTen(rizzBase  * 0.35 + rizzN  * 0.65),
+      mog:   oneToTen(mogBase   * 0.35 + mogN   * 0.65)
     };
 
     return {

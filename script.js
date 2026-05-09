@@ -52,25 +52,217 @@
   // Initial UI state: idle (waiting on user to start camera)
   setIdle();
 
-  // ----- Verdict text ----------------------------------------------------
+  // ----- Verdict text (now with extra unhinge) ---------------------------
   const VERDICTS = [
-    { title: "Mission Bell",                flavor: "Sober as 6 a.m. mass at the Old Mission. Disturbingly hydrated.",                 rx: "One acai bowl from Backyard Bowls. You earned it." },
-    { title: "Backyard Bowl",               flavor: "Smoothie-in-hand energy. A walking yoga retreat.",                                  rx: "Light kombucha. Stay the course." },
-    { title: "One IPA at Brass Bear",       flavor: "Cheeks pink-adjacent. Suddenly an expert on the Santa Ynez AVA.",                  rx: "One more pint. Then water. Yes, water." },
-    { title: "Funk Zone Float",             flavor: "Two pours into the Urban Wine Trail. Tote bag deployed. Peak hospitality.",        rx: "Pretzel. Stretch. Refuse the third tasting." },
-    { title: "Sandbar Survivor",            flavor: "Solid buzz. Eyes 60% open, 100% sincere. Has Stearns Wharf parking opinions.",     rx: "Tacos. A whole basket. Order them yourself." },
-    { title: "Joe's Mai Tai",               flavor: "The legendary Joe's mai tai is hitting. Has, against all advice, ordered a second.", rx: "Walk to the beach. Look at one (1) pelican." },
-    { title: "Wildcat Wobble",              flavor: "State Street is rotating at a leisurely 0.5 RPM. Loves a stranger now.",           rx: "Hand over the keys. Hand over the phone. Lyft." },
-    { title: "Stearns Wharf Stumble",       flavor: "One wrong step from the Pacific. Believes the seagulls are listening. They are.",  rx: "Sit. On a bench. Inland-facing. Drink water." },
-    { title: "Isla Vista Insomniac",        flavor: "DP party went too far. Currently barefoot. Phone at 7%.",                          rx: "Tap water. Big slice of pizza. Bed, alone." },
-    { title: "Found-on-the-Beach-at-Dawn",  flavor: "Sunrise at Leadbetter, sand in places sand should not be. Will swear off tequila.", rx: "Gatorade. Esau's breakfast. Apologize to everyone." }
+    { // 1
+      title: "Mission Bell",
+      flavor: "Sober as 6 a.m. mass at the Old Mission. Has, unprompted, mentioned their step count today. Drinks water with lemon. Suspiciously hydrated. Will offer you LMNT.",
+      rx: "One acai bowl from Backyard Bowls. Touch grass. Reward your liver."
+    },
+    { // 2
+      title: "Backyard Bowl",
+      flavor: "Smoothie in hand. Currently explaining astrology to a dog. Tote bag has a podcast logo on it that doesn't exist anymore. Says 'I'm a lightweight' as a flex.",
+      rx: "Light kombucha. Continue gentle vibing. Do not start a Substack."
+    },
+    { // 3
+      title: "One IPA at Brass Bear",
+      flavor: "Cheeks pink-adjacent. Just used the words 'dry-hopped' and 'mouthfeel' in the same breath. Will, in eleven minutes, tell you about their juice cleanse and a guy named Reid.",
+      rx: "One more pint. Then water. Then refuse the third pint. Yes, water."
+    },
+    { // 4
+      title: "Funk Zone Float",
+      flavor: "Two pours into the Urban Wine Trail. Has begun a sentence with 'okay so my screenplay—'. Believes they invented the spritz. Tote fully deployed. Mentioned they're 'kind of an empath'.",
+      rx: "Soft pretzel. Stretch. Refuse the third tasting flight. Block their ex preemptively."
+    },
+    { // 5
+      title: "Sandbar Survivor",
+      flavor: "Has explained, twice, that the ocean is 'basically just big sky'. Trying to befriend a kelp strand. Pitching a startup that's 'kind of like Postmates but for emotions'. Convinced they're vibe-coding.",
+      rx: "Tacos. A whole basket. Order them yourself, do not delegate. No more pitching."
+    },
+    { // 6
+      title: "Joe's Mai Tai",
+      flavor: "The legendary Joe's mai tai has hit the system. Has informed the bartender they 'used to bartend, in a past life, energetically'. Currently rebuilding their personality from a single Big Lebowski reference.",
+      rx: "Walk to the beach. Look at one (1) pelican. Do not, under any circumstances, sing."
+    },
+    { // 7
+      title: "Wildcat Wobble",
+      flavor: "State Street rotates at a leisurely 0.5 RPM. Has loudly declared love for a stranger and a sidewalk lamppost. Convinced the bouncer is, low-key, his actual best friend. Has begun air-DJing.",
+      rx: "Hand over the keys. Hand over the phone. Hand over the Notes app. Get a Lyft."
+    },
+    { // 8
+      title: "Stearns Wharf Stumble",
+      flavor: "One wrong step from the Pacific. Believes the seagulls are listening. They are. They always have been. Has texted their ex, their ex's mom, and a number labeled 'do NOT', in that order.",
+      rx: "Sit on a bench. Inland-facing. Drink water. Do not finalize that voice memo."
+    },
+    { // 9
+      title: "Isla Vista Insomniac",
+      flavor: "DP party went a little too far. Currently barefoot. Phone at 7% and they're using it as a flashlight. Just told a stranger they 'feel like the universe is, like, a big group chat' and meant it.",
+      rx: "Tap water. Big slice of pizza from Woodstock's. Bed. Alone. Phone face-down."
+    },
+    { // 10
+      title: "Found-on-the-Beach-at-Dawn",
+      flavor: "Sunrise at Leadbetter. Sand in places sand should not be. Has founded a sober-curious newsletter that will exist for three weeks. Will swear off tequila. Will, instead, swear off the specific bartender, by name, on Instagram.",
+      rx: "Gatorade. Esau's breakfast. Apologize to everyone you texted, in alphabetical order."
+    }
   ];
 
+  // Field notes by tier — short, ridiculous, on the receipt
   const RECEIPT_NOTES = [
-    ["Could probably do my taxes", "Eyes alarmingly open", "Posture: librarian-grade"],
-    ["Vibes: vacationing", "Could parallel park, slowly", "Speaking only in restaurant recs"],
-    ["Vibes: aggressively un-ironic", "Has declared 'I love this song' to silence", "Believes they invented karaoke"],
-    ["Walking on a noticeable diagonal", "Lost one shoe, gained one number", "Convinced seagulls owe them money"]
+    [ // tier 0 (1-3)
+      "Could probably file taxes",
+      "Eyes alarmingly open",
+      "Posture: librarian-grade",
+      "Smelled like SPF 50",
+      "Has used the word 'modality' in casual conversation"
+    ],
+    [ // tier 1 (4-6)
+      "Vibes: vacationing",
+      "Could parallel park, slowly",
+      "Speaking exclusively in restaurant recs",
+      "Has joined a group chat without permission",
+      "Pitched a podcast in the last 90 seconds"
+    ],
+    [ // tier 2 (7-8)
+      "Aggressively un-ironic",
+      "Declared 'I love this song' to total silence",
+      "Believes they invented karaoke",
+      "Currently friends with the entire bar",
+      "Doing a TED talk to one (1) houseplant"
+    ],
+    [ // tier 3 (9-10)
+      "Walking on a noticeable diagonal",
+      "Lost one shoe, gained one number",
+      "Convinced seagulls owe them money",
+      "Has typed 'wyd' into a calculator app",
+      "Currently the unofficial mayor of Funk Zone alley B"
+    ]
+  ];
+
+  // ----- Sub-rating tier labels (10 tiers each, max ridiculousness) -------
+  const SUB_LABELS = {
+    tweak: [
+      "Glassy and at peace. Possibly a monk.",
+      "Functioning. Annotating.",
+      "Hands moving at 1.2x speed",
+      "Has restructured the conversation twice",
+      "Speedrunning a TED talk you didn't ask for",
+      "Pupils consulting independently",
+      "Reorganizing your kitchen, mentally",
+      "Currently solving a Rubik's cube emotionally",
+      "Has invented a religion in the last 4 minutes",
+      "Vibrating on a frequency only doorbells can hear"
+    ],
+    vibe: [
+      "Aura: beige. Ambient: hum of a Costco.",
+      "A small, lukewarm tea",
+      "Picnic-blanket-coded",
+      "Warm tones, gentle hum, casual radiance",
+      "Sun-tea energy. Highly approachable.",
+      "Glowing in HDR",
+      "Golden hour, audibly",
+      "Vibe so loud the photo is humming",
+      "Frequency: sunset. Color temperature: yes.",
+      "Photographed in 3 dimensions and a fourth one we don't talk about"
+    ],
+    cope: [
+      "Not pretending. Refreshing.",
+      "Has accepted the situation",
+      "Mildly faking it. Convincingly.",
+      "Faking it like a champ",
+      "Holding it together with floss",
+      "Smile structural integrity: 60%",
+      "Damp-cardboard smile",
+      "Lying to a mirror. Mirror unconvinced.",
+      "In line for a denial-shaped croissant",
+      "Has gaslit a houseplant"
+    ],
+    rizz: [
+      "0.5g of charisma detected",
+      "Could text someone back, probably",
+      "Functional charm, like a screen door",
+      "Hospitality-school energy",
+      "Could secure a free chip refill",
+      "Could borrow a charger from a stranger",
+      "Could borrow $40 with eye contact alone",
+      "Bartender just took down the recipe",
+      "Chemically irresistible. Possibly a hazard.",
+      "Has been written into someone's will"
+    ],
+    mog: [
+      "Currently a chair. A nice chair, but a chair.",
+      "Politely existing in the photo",
+      "Holds a door, occasionally",
+      "Solid Tuesday-evening presence",
+      "Functional aura. Hardware-store-grade.",
+      "Mogging quietly. Building leverage.",
+      "Mogging audibly. Heads turning.",
+      "Has mogged a stranger across a parking lot",
+      "Has mogged an entire pew",
+      "Sasha-tier. Aura visible from space."
+    ]
+  };
+
+  // Top news ticker — vibe-coded headlines / SB nightlife / Sasha lore
+  const TICKER_HEADLINES = [
+    "TONIGHT: SASHA'S BIRTHDAY — BEARD AT FULL DEPLOYMENT",
+    "AURA ADVISORY: SASHA HAS ENTERED THE FRAME",
+    "SASHA MOGS — THIS IS NOW SETTLED LAW",
+    "ADAPTIVE REUSE UPDATE: ONE (1) CHURCH → HOTEL, AGAIN",
+    "ARCHITECTURAL HOT TAKE: PEWS MAKE GREAT BAR SEATING",
+    "POWERED BY VIBES",
+    "VIBE-CODED AT 3 A.M. WITH A WHITE CLAW",
+    "TWEAK ADVISORY: ZONE 4 SHOWING ELEVATED HAND-SPEED",
+    "STATE STREET CONDITIONS: SLOSHED",
+    "STEARNS WHARF DEPTH: DEEPER WHEN DRUNK",
+    "FUNK ZONE WIND: WARM, WINEY, JUDGMENTAL",
+    "TONIGHT'S FORECAST: 80% TWEAK, 20% TEQUILA",
+    "BEARD DENSITY INDEX RECALIBRATED — SASHA-GRADE TIER UNLOCKED",
+    "MOGGING DETECTED IN THE SOUTHERN HEMISPHERE OF THE FRAME",
+    "ALL CALCULATIONS APPROVED BY ONE GUY ON STATE ST",
+    "ALGORITHM SHIPPED ON A FEELING",
+    "RIZZ INDEX RECALIBRATED FOR DAYLIGHT SAVINGS",
+    "I.V. CURFEW: WHEN THE PIZZA RUNS OUT",
+    "PARTY VENUE: A BUILDING THAT USED TO BE SOMETHING ELSE",
+    "JOE'S MAI TAI ADVISORY LEVEL: ORANGE",
+    "SASHA'S CANDLES: SOMETIMES THIS YEAR, DEFINITELY NEXT",
+    "THIS WEBSITE WAS MADE OF VIBES, PALM TREES, AND ONE BEARD",
+    "PALMS OBSERVED SWAYING WITH MILD JUDGMENT",
+    "PRODUCTION DEPLOYS BASED ENTIRELY ON A HUNCH"
+  ];
+
+  // Sub-ticker rotor — face metrics being "scanned"
+  const SUBTICKER_METRICS = [
+    "cheek flush coefficient",
+    "ocular fog index",
+    "jaw clench (tweak proxy)",
+    "pupil sovereignty",
+    "beard density (Sasha-grade)",
+    "smile structural integrity",
+    "forehead shimmer",
+    "aura saturation",
+    "aura mogging quotient",
+    "rizz coefficient (live)",
+    "denial gradient",
+    "vibe-code compliance",
+    "tweak factor (background)",
+    "cope thermal mass",
+    "side-eye reserves",
+    "adaptive-reuse harmonics",
+    "church-pew nostalgia",
+    "candle thermal mass",
+    "kelp-affinity bias",
+    "Funk Zone resonance",
+    "lamppost-trust quotient"
+  ];
+
+  // Birthday shoutouts shown at the bottom of the verdict modal
+  const BDAY_SHOUTOUTS = [
+    "Wish Sasha a happy birthday — he’s converted another church.",
+    "Light a candle for Sasha. Then for his liver.",
+    "A toast: to the beard, to the aura, to the hotel that used to be a chapel.",
+    "Sasha is older now. The pews remain.",
+    "Happy birthday, Sasha. The mog is well documented.",
+    "Tonight’s adaptive-reuse update: this party, formerly a quiet evening."
   ];
 
   // ======================================================================
@@ -299,7 +491,72 @@
     }
 
     const score = Math.max(1, Math.min(10, Math.round(raw * 9 + 1)));
-    return { score, components: { flush, eyeDroop, stability, vibe }, matched };
+
+    // ----- Sub-scores: independent axes derived from features -------------
+    // TWEAK = sharp + saturated + bright (the "wired but not drunk" axis)
+    const tweakRaw = clamp(
+      f.sharpness * 0.45 +
+      f.saturation * 0.25 +
+      Math.max(0, f.luminance - 0.5) * 0.6 +
+      f.flush * 0.10,
+      0, 1
+    );
+    // VIBE (aura) = warmth + saturation, peaks at mid-luminance
+    const vibeRaw = clamp(
+      ((f.warmth + 1) / 2) * 0.45 +
+      f.saturation * 0.4 +
+      (1 - Math.abs(f.luminance - 0.55) * 1.6) * 0.15,
+      0, 1
+    );
+    // COPE = composure: low flush + sharp = "trying to look fine"
+    const copeRaw = clamp(
+      (1 - flush) * 0.55 +
+      f.sharpness * 0.35 +
+      (1 - eyeDroop) * 0.10,
+      0, 1
+    );
+    // RIZZ = mid-flush + warm + saturated, modest randomness for spice
+    const rizzBase = clamp(
+      (1 - Math.abs(flush - 0.32)) * 0.45 +
+      f.saturation * 0.30 +
+      ((f.warmth + 1) / 2) * 0.25,
+      0, 1
+    );
+    // Seed rizz randomness from feature hash so same photo gives same rizz
+    const seed = Math.abs(Math.sin(
+      (f.flush + f.warmth + f.saturation + f.luminance) * 1000
+    ));
+    const rizzRaw = clamp(rizzBase * 0.85 + seed * 0.15, 0, 1);
+
+    // MOG = aura presence — saturation + warmth + sharpness + a touch of flush
+    // Big, warm, in-focus, flushed-but-not-too-flushed faces dominate the frame.
+    const mogRaw = clamp(
+      f.saturation * 0.30 +
+      ((f.warmth + 1) / 2) * 0.30 +
+      f.sharpness * 0.25 +
+      Math.max(0, 0.4 - Math.abs(flush - 0.35)) * 0.4 +
+      seed * 0.1,
+      0, 1
+    );
+
+    const subs = {
+      tweak: oneToTen(tweakRaw),
+      vibe:  oneToTen(vibeRaw),
+      cope:  oneToTen(copeRaw),
+      rizz:  oneToTen(rizzRaw),
+      mog:   oneToTen(mogRaw)
+    };
+
+    return {
+      score,
+      components: { flush, eyeDroop, stability, vibe },
+      subs,
+      matched
+    };
+  }
+
+  function oneToTen(v) {
+    return Math.max(1, Math.min(10, Math.round(v * 9 + 1)));
   }
 
   function featureDistance(a, b) {
@@ -345,16 +602,39 @@
     verdictFlav.textContent  = v.flavor;
     verdictRx.textContent    = v.rx;
 
+    // Sub-ratings: tweak / vibe / cope / rizz / mog (Sasha-grade)
+    renderSub('Tweak', out.subs.tweak, SUB_LABELS.tweak);
+    renderSub('Vibe',  out.subs.vibe,  SUB_LABELS.vibe);
+    renderSub('Cope',  out.subs.cope,  SUB_LABELS.cope);
+    renderSub('Rizz',  out.subs.rizz,  SUB_LABELS.rizz);
+    renderSub('Mog',   out.subs.mog,   SUB_LABELS.mog);
+
+    // Birthday shoutout — special if MOG is high
+    const shout = $('bdayShoutout');
+    if (shout) {
+      if (out.subs.mog >= 9) {
+        shout.textContent = "Sasha-tier mog detected. Architecturally significant. Adaptively re-used.";
+      } else if (out.subs.mog >= 7) {
+        shout.textContent = "Mog detected. Sasha would nod at this, beard-first.";
+      } else {
+        shout.textContent = BDAY_SHOUTOUTS[Math.floor(Math.random() * BDAY_SHOUTOUTS.length)];
+      }
+    }
+
     // Receipt
     receiptList.innerHTML = '';
     pushReceipt("Cheek flush",         pct(out.components.flush));
     pushReceipt("Eye droop",           pct(out.components.eyeDroop));
     pushReceipt("Photo stability",     pct(1 - out.components.stability) + " (steadier=lower)");
     pushReceipt("Sunset vibe",         pct(out.components.vibe));
+    pushReceipt("Tweak/Vibe/Cope/Rizz/Mog",
+      `${out.subs.tweak}/${out.subs.vibe}/${out.subs.cope}/${out.subs.rizz}/${out.subs.mog}`);
     pushReceipt("Closest reference",   out.matched ? `#${(out.matched.id+'').slice(-4)} (${out.matched.score}/10)` : "none on file");
     const tier = out.score <= 3 ? 0 : out.score <= 6 ? 1 : out.score <= 8 ? 2 : 3;
     const notes = RECEIPT_NOTES[tier];
     pushReceipt("Field note", notes[Math.floor(Math.random() * notes.length)]);
+    pushReceipt("Algorithm provenance", "vibe-coded");
+    pushReceipt("Venue", "formerly a church, currently a hotel");
 
     // Score number — count up animation
     result.hidden = false;
@@ -367,6 +647,22 @@
     requestAnimationFrame(() => {
       scoreArc.style.strokeDashoffset = target;
     });
+  }
+
+  function renderSub(name, score, labels) {
+    const numEl  = $('sr' + name + 'Num');
+    const fillEl = $('sr' + name + 'Fill');
+    const tagEl  = $('sr' + name + 'Tag');
+    if (!numEl || !fillEl || !tagEl) return;
+    // Reset then animate
+    fillEl.style.width = '0%';
+    numEl.textContent = '0';
+    tagEl.textContent = labels[score - 1];
+    // Stagger the count-up so multiple bars feel sequential
+    setTimeout(() => {
+      fillEl.style.width = (score * 10) + '%';
+      countUp(numEl, 0, score, 700);
+    }, 120 + Math.random() * 180);
   }
 
   function pushReceipt(lbl, val) {
@@ -557,7 +853,36 @@ Rx: ${lastVerdict.rx}`;
     toast._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
   }
 
+  // ======================================================================
+  // TICKERS
+  // ======================================================================
+  function buildTopTicker() {
+    const track = $('tickerTrack');
+    if (!track) return;
+    // Build a long enough strip that the -50% loop is seamless
+    const items = [...TICKER_HEADLINES, ...TICKER_HEADLINES];
+    track.innerHTML = items.map(t =>
+      `<span>${t}</span><span class="dot">&#127796;</span>`
+    ).join('');
+  }
+
+  function startSubticker() {
+    const rotor = $('subtickerRotor');
+    if (!rotor) return;
+    let i = 0;
+    setInterval(() => {
+      i = (i + 1) % SUBTICKER_METRICS.length;
+      // Re-trigger fade animation
+      rotor.style.animation = 'none';
+      rotor.offsetHeight; // reflow
+      rotor.style.animation = '';
+      rotor.textContent = SUBTICKER_METRICS[i];
+    }, 1900);
+  }
+
   // ----- Init ------------------------------------------------------------
+  buildTopTicker();
+  startSubticker();
   renderRefs();
 
   // Pause stream when tab is hidden (saves battery on iOS)

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ff5d6c">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>805 Sobriety &mdash; SB Drunk-O-Meter</title>
+  <title>Sasha's Birthday Sobriety Index &mdash; SB Drunk-O-Meter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
@@ -37,6 +37,21 @@
     </symbol>
   </svg>
 
+  <!-- ==========  BIRTHDAY BANNER ========== -->
+  <div class="bday-banner" role="banner">
+    <span class="bday-cake">&#127874;</span>
+    <span class="bday-text">
+      <strong>Sasha&rsquo;s Birthday Edition</strong>
+      <span class="bday-sub">the beard has arrived &middot; aura confirmed &middot; he mogs</span>
+    </span>
+    <span class="bday-cake right">&#127874;</span>
+  </div>
+
+  <!-- ==========  TOP NEWS TICKER (vibe-coded headlines) ========== -->
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
   <!-- ==========  APP HEADER (compact, fixed-ish on top) ========== -->
   <header class="topbar">
     <svg class="topbar-palm" viewBox="0 0 60 90"><use href="#palm-mini"/></svg>
@@ -44,17 +59,25 @@
       <span class="brand-mark">805</span>
       <span class="brand-divider"></span>
       <span class="brand-name">Sobriety</span>
+      <span class="brand-vibe">vibe&#8209;coded</span>
     </div>
     <svg class="topbar-palm flip" viewBox="0 0 60 90"><use href="#palm-mini"/></svg>
   </header>
+
+  <!-- ==========  SUB-TICKER (face metric scanner, idle/live) ========== -->
+  <div class="subticker" aria-hidden="true">
+    <span class="subticker-led"></span>
+    <span class="subticker-prefix">SCANNING:</span>
+    <span class="subticker-rotor" id="subtickerRotor">cheek flush coefficient</span>
+  </div>
 
   <!-- ==========  HERO + CAMERA (the main event) ========== -->
   <main>
 
     <section class="stage">
-      <p class="stage-eyebrow">Santa Barbara&rsquo;s official</p>
+      <p class="stage-eyebrow">Tonight only &middot; for Sasha</p>
       <h1 class="stage-title">Drunk&#8209;O&#8209;Meter</h1>
-      <p class="stage-sub">Snap a face. Get a verdict 1&ndash;10. <span>Be honest.</span></p>
+      <p class="stage-sub">Snap a guest. Get a verdict 1&ndash;10. <span>Tweak, vibe, cope, rizz, mog included.</span></p>
 
       <!-- Camera / preview viewfinder -->
       <div class="cam" id="cam">
@@ -122,6 +145,11 @@
       <div class="result-card">
         <button class="result-close" id="resultClose" aria-label="Close">&times;</button>
 
+        <div class="vibe-stamp" aria-hidden="true">
+          <span>VIBE</span>
+          <span>CODED</span>
+        </div>
+
         <p class="result-eyebrow">The verdict</p>
 
         <div class="score-stage">
@@ -148,6 +176,52 @@
 
         <h2 class="verdict-title" id="verdictTitle">&mdash;</h2>
         <p class="verdict-flavor" id="verdictFlavor">&mdash;</p>
+
+        <!-- Sub-ratings: face categories beyond just drunkness -->
+        <div class="subrates" id="subrates">
+          <div class="subrate" data-key="tweak">
+            <div class="subrate-head">
+              <span class="subrate-name">Tweak factor</span>
+              <span class="subrate-num" id="srTweakNum">&mdash;</span>
+            </div>
+            <div class="subrate-bar"><div class="subrate-fill" id="srTweakFill"></div></div>
+            <p class="subrate-tag" id="srTweakTag">&mdash;</p>
+          </div>
+          <div class="subrate" data-key="vibe">
+            <div class="subrate-head">
+              <span class="subrate-name">Aura / vibe</span>
+              <span class="subrate-num" id="srVibeNum">&mdash;</span>
+            </div>
+            <div class="subrate-bar"><div class="subrate-fill" id="srVibeFill"></div></div>
+            <p class="subrate-tag" id="srVibeTag">&mdash;</p>
+          </div>
+          <div class="subrate" data-key="cope">
+            <div class="subrate-head">
+              <span class="subrate-name">Cope level</span>
+              <span class="subrate-num" id="srCopeNum">&mdash;</span>
+            </div>
+            <div class="subrate-bar"><div class="subrate-fill" id="srCopeFill"></div></div>
+            <p class="subrate-tag" id="srCopeTag">&mdash;</p>
+          </div>
+          <div class="subrate" data-key="rizz">
+            <div class="subrate-head">
+              <span class="subrate-name">Rizz index</span>
+              <span class="subrate-num" id="srRizzNum">&mdash;</span>
+            </div>
+            <div class="subrate-bar"><div class="subrate-fill" id="srRizzFill"></div></div>
+            <p class="subrate-tag" id="srRizzTag">&mdash;</p>
+          </div>
+          <div class="subrate subrate-wide" data-key="mog">
+            <div class="subrate-head">
+              <span class="subrate-name">Mog index <em class="subrate-sasha">(Sasha-grade)</em></span>
+              <span class="subrate-num" id="srMogNum">&mdash;</span>
+            </div>
+            <div class="subrate-bar"><div class="subrate-fill" id="srMogFill"></div></div>
+            <p class="subrate-tag" id="srMogTag">&mdash;</p>
+          </div>
+        </div>
+
+        <p class="bday-shoutout" id="bdayShoutout">&mdash;</p>
 
         <div class="rx" id="rxBox">
           <span class="rx-label">Rx</span>

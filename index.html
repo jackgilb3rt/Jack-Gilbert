@@ -2,351 +2,216 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The State Street Sobriety Index &mdash; Santa Barbara's Official Drunk-O-Meter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ff5d6c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>805 Sobriety &mdash; SB Drunk-O-Meter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Caveat:wght@400;700&family=Pacifico&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ==========  SUNSET / SKY BACKGROUND  ========== -->
-  <div class="sky" aria-hidden="true">
-    <div class="sun"></div>
-    <div class="stars"></div>
-    <div class="ocean"></div>
+  <!-- Subtle palm-pattern background (single, contained) -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-sun"></div>
+    <div class="bg-glow"></div>
   </div>
 
-  <!-- ==========  PALM TREES (decorative, EVERYWHERE)  ========== -->
-  <!-- Inline SVG so we can sway them with CSS -->
-  <svg class="palm palm-left palm-1"  viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-  <svg class="palm palm-right palm-2" viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-  <svg class="palm palm-left palm-3"  viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-  <svg class="palm palm-right palm-4" viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-  <svg class="palm palm-left palm-5"  viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-  <svg class="palm palm-right palm-6" viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-
-  <!-- Reusable palm symbol -->
+  <!-- Reusable palm SVG (small, accent only) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="palm" viewBox="0 0 200 600">
-      <!-- trunk -->
-      <path d="M95 600 Q 90 450 100 300 Q 110 200 95 100"
-            stroke="#3a2415" stroke-width="14" fill="none" stroke-linecap="round"/>
-      <!-- trunk rings -->
-      <g stroke="#2a190d" stroke-width="2" fill="none" opacity=".7">
-        <path d="M88 560 Q100 555 108 562"/>
-        <path d="M88 510 Q100 505 108 512"/>
-        <path d="M88 460 Q100 455 108 462"/>
-        <path d="M89 410 Q100 405 109 412"/>
-        <path d="M91 360 Q100 355 110 362"/>
-        <path d="M93 310 Q100 305 110 312"/>
-        <path d="M95 260 Q102 255 112 262"/>
-        <path d="M97 210 Q104 205 113 212"/>
-        <path d="M99 160 Q106 155 114 162"/>
+    <symbol id="palm-mini" viewBox="0 0 60 90">
+      <path d="M30 90 Q 28 60 32 35 Q 33 22 30 12" stroke="#1f5f3d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <g fill="#2a8a55">
+        <path d="M30 12 Q 8 8 0 0   Q 14 14 30 16 Z"/>
+        <path d="M30 12 Q 52 8 60 0  Q 46 14 30 16 Z"/>
+        <path d="M30 12 Q 6 18 -2 28  Q 14 16 30 16 Z"/>
+        <path d="M30 12 Q 54 18 62 28 Q 46 16 30 16 Z"/>
+        <path d="M30 12 Q 22 -4 18 -10 Q 28 4 32 16 Z"/>
+        <path d="M30 12 Q 38 -4 42 -10 Q 32 4 32 16 Z"/>
       </g>
-      <!-- coconuts -->
-      <circle cx="92"  cy="105" r="7" fill="#4a2a14"/>
-      <circle cx="106" cy="108" r="6" fill="#5a3318"/>
-      <circle cx="100" cy="118" r="6" fill="#3e220f"/>
-      <!-- fronds -->
-      <g fill="#1f5f3d">
-        <path d="M95 100 Q 30 70 0 30   Q 50 80 95 105 Z"/>
-        <path d="M95 100 Q 170 70 200 30 Q 150 80 95 105 Z"/>
-        <path d="M95 100 Q 20 110 -10 150 Q 50 110 95 105 Z"/>
-        <path d="M95 100 Q 180 110 210 150 Q 150 110 95 105 Z"/>
-        <path d="M95 100 Q 60 30 30 -10  Q 80 50 100 105 Z"/>
-        <path d="M95 100 Q 130 30 170 -10 Q 120 50 100 105 Z"/>
-        <path d="M95 100 Q 95 20 110 -20  Q 95 50 100 105 Z"/>
-      </g>
-      <!-- frond highlights -->
-      <g fill="#2a8a55" opacity=".7">
-        <path d="M95 100 Q 50 80 20 50 Q 60 90 95 105 Z"/>
-        <path d="M95 100 Q 140 80 175 50 Q 130 90 95 105 Z"/>
-      </g>
+      <circle cx="29" cy="14" r="1.8" fill="#3e220f"/>
+      <circle cx="33" cy="15" r="1.6" fill="#3e220f"/>
     </symbol>
   </svg>
 
-  <!-- ==========  HEADER  ========== -->
-  <header class="masthead">
-    <div class="ticker" aria-hidden="true">
-      <div class="ticker-track">
-        <span>&#127796; LIVE FROM 805 &#127796;</span>
-        <span>&#127865;&#65039; YOUR LIVER WANTS A WORD &#127865;&#65039;</span>
-        <span>&#127796; STATE STREET CONDITIONS: SLOSHED &#127796;</span>
-        <span>&#127865;&#65039; THE OFFICIAL SANTA BARBARA SOBRIETY INDEX &#127865;&#65039;</span>
-        <span>&#127796; FUNK ZONE WIND: WARM, WINEY &#127796;</span>
-        <span>&#127865;&#65039; STEARNS WHARF DEPTH: DEEPER WHEN DRUNK &#127865;&#65039;</span>
-        <!-- duplicate for seamless loop -->
-        <span>&#127796; LIVE FROM 805 &#127796;</span>
-        <span>&#127865;&#65039; YOUR LIVER WANTS A WORD &#127865;&#65039;</span>
-        <span>&#127796; STATE STREET CONDITIONS: SLOSHED &#127796;</span>
-        <span>&#127865;&#65039; THE OFFICIAL SANTA BARBARA SOBRIETY INDEX &#127865;&#65039;</span>
-        <span>&#127796; FUNK ZONE WIND: WARM, WINEY &#127796;</span>
-        <span>&#127865;&#65039; STEARNS WHARF DEPTH: DEEPER WHEN DRUNK &#127865;&#65039;</span>
-      </div>
+  <!-- ==========  APP HEADER (compact, fixed-ish on top) ========== -->
+  <header class="topbar">
+    <svg class="topbar-palm" viewBox="0 0 60 90"><use href="#palm-mini"/></svg>
+    <div class="topbar-brand">
+      <span class="brand-mark">805</span>
+      <span class="brand-divider"></span>
+      <span class="brand-name">Sobriety</span>
     </div>
-
-    <div class="hero">
-      <p class="kicker">An entirely unscientific service of</p>
-      <h1 class="title">
-        <span class="title-line line-1">The State Street</span>
-        <span class="title-line line-2">Sobriety Index</span>
-      </h1>
-      <p class="subtitle">
-        Upload a photo. We'll tell you, on a scale of <em>Mission Bell</em> to <em>Found-on-the-beach-at-dawn</em>,
-        <strong>exactly how cooked</strong> they are.
-      </p>
-      <div class="hero-badges">
-        <span class="badge">93101</span>
-        <span class="badge">EST. RIGHT NOW</span>
-        <span class="badge">PALM-CERTIFIED</span>
-        <span class="badge">NOT ADMISSIBLE IN COURT</span>
-      </div>
-    </div>
+    <svg class="topbar-palm flip" viewBox="0 0 60 90"><use href="#palm-mini"/></svg>
   </header>
 
+  <!-- ==========  HERO + CAMERA (the main event) ========== -->
   <main>
 
-    <!-- ==========  THE RATER  ========== -->
-    <section class="rater" id="rater">
-      <div class="postcard">
-        <div class="postcard-stamp">
-          <div class="stamp-inner">
-            <span>SB</span>
-            <small>805</small>
+    <section class="stage">
+      <p class="stage-eyebrow">Santa Barbara&rsquo;s official</p>
+      <h1 class="stage-title">Drunk&#8209;O&#8209;Meter</h1>
+      <p class="stage-sub">Snap a face. Get a verdict 1&ndash;10. <span>Be honest.</span></p>
+
+      <!-- Camera / preview viewfinder -->
+      <div class="cam" id="cam">
+        <div class="cam-frame" id="camFrame">
+          <video id="video" playsinline autoplay muted></video>
+          <img id="snap" alt="Captured photo" hidden>
+
+          <!-- Palm-tree corner brackets -->
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+
+          <!-- Center reticle when live -->
+          <div class="cam-reticle" id="camReticle">
+            <span>FACE HERE</span>
+          </div>
+
+          <!-- Idle / permission state -->
+          <div class="cam-idle" id="camIdle">
+            <div class="cam-idle-icon">&#127968;</div>
+            <p class="cam-idle-title">Tap to start the camera</p>
+            <p class="cam-idle-sub">We&rsquo;ll need permission. Photos never leave your phone.</p>
+            <button class="btn btn-primary" id="startCam">Start camera</button>
+            <button class="btn btn-ghost" id="pickInstead">Or pick from gallery</button>
+          </div>
+
+          <!-- Flash overlay -->
+          <div class="cam-flash" id="camFlash"></div>
+
+          <!-- Scanning overlay during analysis -->
+          <div class="cam-scan" id="camScan" hidden>
+            <div class="scan-line"></div>
+            <div class="scan-text">Tribunal of Palms deliberating&hellip;</div>
           </div>
         </div>
 
-        <h2 class="postcard-title">Step 1 &mdash; Submit the Suspect</h2>
-        <p class="postcard-sub">A clear shot of the face works best. The Tribunal of Palms is watching.</p>
-
-        <div class="dropzone" id="dropzone">
-          <div class="dropzone-inner">
-            <div class="dropzone-icon">&#128247;</div>
-            <p class="dropzone-text">Drop a photo here, snap one, or pick a file</p>
-            <div class="dropzone-actions">
-              <label class="btn btn-coral">
-                <input type="file" id="fileInput" accept="image/*" hidden>
-                Choose photo
-              </label>
-              <label class="btn btn-teal">
-                <input type="file" id="cameraInput" accept="image/*" capture="user" hidden>
-                Use camera
-              </label>
-            </div>
-            <p class="dropzone-fineprint">Photos are processed locally, in your browser. Nothing leaves this beach.</p>
-          </div>
+        <!-- Camera controls bar -->
+        <div class="cam-bar" id="camBar" hidden>
+          <button class="bar-btn" id="flipBtn" aria-label="Flip camera">
+            <span class="ico ico-flip"></span>
+          </button>
+          <button class="shutter" id="shutterBtn" aria-label="Take photo">
+            <span class="shutter-ring"></span>
+            <span class="shutter-dot"></span>
+          </button>
+          <label class="bar-btn" aria-label="Pick photo">
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <span class="ico ico-gallery"></span>
+          </label>
         </div>
 
-        <div class="preview" id="preview" hidden>
-          <div class="preview-frame">
-            <img id="previewImg" alt="The suspect">
-            <div class="preview-overlay">
-              <div class="scanline"></div>
-              <div class="reticle">
-                <span class="reticle-corner tl"></span>
-                <span class="reticle-corner tr"></span>
-                <span class="reticle-corner bl"></span>
-                <span class="reticle-corner br"></span>
-                <span class="reticle-label">SUBJECT LOCKED</span>
-              </div>
-            </div>
-          </div>
-          <div class="preview-actions">
-            <button class="btn btn-sun" id="rateBtn">Rate the Damage &rarr;</button>
-            <button class="btn btn-ghost" id="clearBtn">Pick a different victim</button>
-          </div>
+        <!-- Review controls (after a photo is captured) -->
+        <div class="review-bar" id="reviewBar" hidden>
+          <button class="btn btn-ghost btn-wide" id="retakeBtn">Retake</button>
+          <button class="btn btn-primary btn-wide" id="rateBtn">Rate me &rarr;</button>
         </div>
-
-        <canvas id="workCanvas" width="320" height="320" hidden></canvas>
       </div>
+
+      <p class="cam-hint" id="camHint">Front camera works best. Get the face filling the frame.</p>
     </section>
 
-    <!-- ==========  RESULT (hidden until rated)  ========== -->
+    <!-- ==========  RESULT (modal-ish, slides up) ========== -->
     <section class="result" id="result" hidden>
       <div class="result-card">
-        <h2 class="result-title">The Tribunal Has Spoken</h2>
+        <button class="result-close" id="resultClose" aria-label="Close">&times;</button>
 
-        <div class="meter" aria-label="Drunk-o-meter">
-          <div class="meter-scale">
-            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-          </div>
-          <div class="meter-track">
-            <div class="meter-fill" id="meterFill"></div>
-            <div class="meter-needle" id="meterNeedle">
-              <svg viewBox="0 0 60 80" aria-hidden="true">
-                <use href="#palm"/>
-              </svg>
+        <p class="result-eyebrow">The verdict</p>
+
+        <div class="score-stage">
+          <div class="score-ring">
+            <svg viewBox="0 0 120 120" class="score-ring-svg">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/>
+              <circle id="scoreArc" cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGrad)" stroke-width="10"
+                      stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                      transform="rotate(-90 60 60)"/>
+              <defs>
+                <linearGradient id="scoreGrad" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#2bb1a6"/>
+                  <stop offset="50%" stop-color="#ffd93d"/>
+                  <stop offset="100%" stop-color="#ff5d6c"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="score-center">
+              <div class="score-num" id="scoreNum">&mdash;</div>
+              <div class="score-out">/ 10</div>
             </div>
           </div>
-          <div class="meter-labels">
-            <span>Mission Bell</span>
-            <span>Funk Zone</span>
-            <span>Stearns Wharf Stumble</span>
-            <span>I.V. Insomniac</span>
-          </div>
         </div>
 
-        <div class="score-row">
-          <div class="score-big">
-            <div class="score-num" id="scoreNum">&mdash;</div>
-            <div class="score-out">/ 10</div>
-          </div>
-          <div class="score-headline">
-            <h3 class="verdict-title" id="verdictTitle">&mdash;</h3>
-            <p class="verdict-flavor" id="verdictFlavor">&mdash;</p>
-          </div>
+        <h2 class="verdict-title" id="verdictTitle">&mdash;</h2>
+        <p class="verdict-flavor" id="verdictFlavor">&mdash;</p>
+
+        <div class="rx" id="rxBox">
+          <span class="rx-label">Rx</span>
+          <span class="rx-text" id="verdictRx">&mdash;</span>
         </div>
 
-        <div class="receipt" id="receipt">
-          <div class="receipt-head">
-            <span>SBPD-PALM &middot; FORM 805</span>
-            <span id="receiptDate"></span>
-          </div>
+        <details class="receipt-wrap">
+          <summary>See the evidence</summary>
           <ul class="receipt-list" id="receiptList"></ul>
-          <div class="receipt-foot">
-            <span>RX:</span>
-            <span id="receiptRx"></span>
-          </div>
-          <div class="receipt-tear" aria-hidden="true"></div>
-        </div>
+        </details>
 
         <div class="result-actions">
-          <button class="btn btn-coral" id="shareBtn">Copy verdict</button>
-          <button class="btn btn-teal" id="againBtn">Rate someone else</button>
+          <button class="btn btn-ghost" id="shareBtn">Copy verdict</button>
+          <button class="btn btn-primary" id="againBtn">Rate again</button>
         </div>
 
-        <p class="disclaimer">
-          This is a joke. The Sobriety Index is not medical, legal, or actually scientific advice.
-          If a friend is in trouble, call somebody &mdash; not us. We're a website with palm trees.
-        </p>
+        <p class="result-fine">For laughs only. Be safe out there. 805.</p>
       </div>
     </section>
 
-    <!-- ==========  CALIBRATION (reference photos)  ========== -->
-    <section class="calibrate" id="calibrate">
-      <div class="calibrate-head">
-        <h2>Step 2 &mdash; Calibrate the Tribunal</h2>
-        <p>
-          Upload reference photos so the algorithm <em>knows what your normal looks like</em>.
-          The more you give it, the snappier the verdicts. Tag each one on the Mission&#8209;Bell&#8209;to&#8209;DP&#8209;party scale.
-        </p>
-      </div>
-
-      <div class="calibrate-grid">
-        <label class="calibrate-add">
-          <input type="file" id="refInput" accept="image/*" multiple hidden>
-          <div class="calibrate-add-inner">
-            <div class="plus">+</div>
-            <p>Add reference photo(s)</p>
-            <small>You'll set the score after upload</small>
-          </div>
-        </label>
-        <div class="calibrate-list" id="refList"></div>
-      </div>
-
-      <div class="calibrate-foot">
-        <span class="palm-bullet">&#127796;</span>
-        <span>Stored only in your browser. Clear them with the button below.</span>
-        <button class="btn btn-ghost btn-tiny" id="clearRefs">Clear references</button>
-      </div>
-    </section>
-
-    <!-- ==========  THE OFFICIAL SCALE  ========== -->
-    <section class="scale" id="scale">
-      <h2 class="scale-title">The Official Santa Barbara Drunk Scale<sup>&trade;</sup></h2>
-      <p class="scale-sub">A field guide. Memorize before SOhO Tuesday.</p>
-
+    <!-- ==========  THE OFFICIAL SCALE (compact accordion-ish list) ========== -->
+    <section class="scale">
+      <h2 class="section-title">The SB Scale</h2>
+      <p class="section-sub">A field guide.</p>
       <ol class="scale-list">
-        <li class="scale-item s-1">
-          <div class="scale-rank">1</div>
-          <h3>Mission Bell</h3>
-          <p>Sober as 6 a.m. mass at the Old Mission. Just left a Padaro Beach yoga session. Drinks water unprompted.</p>
-        </li>
-        <li class="scale-item s-2">
-          <div class="scale-rank">2</div>
-          <h3>Backyard Bowl</h3>
-          <p>Has a smoothie in hand. Genuinely cannot be told they're at a party. Ordered the kombucha.</p>
-        </li>
-        <li class="scale-item s-3">
-          <div class="scale-rank">3</div>
-          <h3>One IPA at Brass Bear</h3>
-          <p>A single beer in. Suddenly an expert on the Santa Ynez AVA. Cheeks pink-adjacent.</p>
-        </li>
-        <li class="scale-item s-4">
-          <div class="scale-rank">4</div>
-          <h3>Funk Zone Float</h3>
-          <p>Two pours at Municipal. Walking the Urban Wine Trail with confidence and a tote bag.</p>
-        </li>
-        <li class="scale-item s-5">
-          <div class="scale-rank">5</div>
-          <h3>Sandbar Survivor</h3>
-          <p>Solid buzz. Volunteering opinions about Stearns Wharf parking. Eyes are 60% open, 100% sincere.</p>
-        </li>
-        <li class="scale-item s-6">
-          <div class="scale-rank">6</div>
-          <h3>Joe's Cafe Mai Tai</h3>
-          <p>The legendary mai tai has done its job. They have, against all advice, ordered a second one.</p>
-        </li>
-        <li class="scale-item s-7">
-          <div class="scale-rank">7</div>
-          <h3>Wildcat Wobble</h3>
-          <p>State Street is spinning at a leisurely 0.5 RPM. Has loudly declared love for at least one stranger.</p>
-        </li>
-        <li class="scale-item s-8">
-          <div class="scale-rank">8</div>
-          <h3>Stearns Wharf Stumble</h3>
-          <p>One wrong step from the Pacific. Believes the seagulls are listening. They are. They always are.</p>
-        </li>
-        <li class="scale-item s-9">
-          <div class="scale-rank">9</div>
-          <h3>I.V. Insomniac</h3>
-          <p>DP party went a little too far. Currently barefoot. Has texted "u up" to a number from 2017.</p>
-        </li>
-        <li class="scale-item s-10">
-          <div class="scale-rank">10</div>
-          <h3>Found-on-the-Beach-at-Dawn</h3>
-          <p>Sunrise at Leadbetter, sand in places sand should not be. Will swear off tequila. Will not mean it.</p>
-        </li>
+        <li class="scale-item s1"><span class="rank">1</span><div><b>Mission Bell</b><p>Sober as 6 a.m. mass at the Old Mission.</p></div></li>
+        <li class="scale-item s2"><span class="rank">2</span><div><b>Backyard Bowl</b><p>Smoothie in hand. A walking yoga retreat.</p></div></li>
+        <li class="scale-item s3"><span class="rank">3</span><div><b>One IPA at Brass Bear</b><p>Cheeks pink-adjacent. Suddenly an AVA expert.</p></div></li>
+        <li class="scale-item s4"><span class="rank">4</span><div><b>Funk Zone Float</b><p>Two pours into the Urban Wine Trail. Tote deployed.</p></div></li>
+        <li class="scale-item s5"><span class="rank">5</span><div><b>Sandbar Survivor</b><p>Solid buzz. Has opinions about Stearns Wharf parking.</p></div></li>
+        <li class="scale-item s6"><span class="rank">6</span><div><b>Joe&rsquo;s Mai Tai</b><p>The legendary mai tai is hitting. Ordered a second.</p></div></li>
+        <li class="scale-item s7"><span class="rank">7</span><div><b>Wildcat Wobble</b><p>State Street rotates at 0.5 RPM. Loves a stranger.</p></div></li>
+        <li class="scale-item s8"><span class="rank">8</span><div><b>Stearns Wharf Stumble</b><p>One step from the Pacific. Talks to seagulls.</p></div></li>
+        <li class="scale-item s9"><span class="rank">9</span><div><b>I.V. Insomniac</b><p>DP went too far. Barefoot. Phone at 7%.</p></div></li>
+        <li class="scale-item s10"><span class="rank">10</span><div><b>Found-on-the-Beach-at-Dawn</b><p>Sunrise at Leadbetter. Sand in places. Will swear off tequila.</p></div></li>
       </ol>
     </section>
 
-    <!-- ==========  HOW IT WORKS  ========== -->
-    <section class="how">
-      <h2>How does it work? <small>(Glad you can still ask.)</small></h2>
-      <div class="how-grid">
-        <div class="how-card">
-          <div class="how-num">01</div>
-          <h3>Skin tells</h3>
-          <p>We look at how flushed the cheeks are &mdash; redness, warmth, that telltale Funk Zone glow.</p>
-        </div>
-        <div class="how-card">
-          <div class="how-num">02</div>
-          <h3>Eye situation</h3>
-          <p>Brightness around the eyes, contrast, and the universal "is the lid drooping" coefficient.</p>
-        </div>
-        <div class="how-card">
-          <div class="how-num">03</div>
-          <h3>Stability</h3>
-          <p>We measure photo blur. A truly steady hand is a sober hand. Usually.</p>
-        </div>
-        <div class="how-card">
-          <div class="how-num">04</div>
-          <h3>Vibe match</h3>
-          <p>If you've uploaded references, we match the photo against the closest one in tone.</p>
-        </div>
-      </div>
+    <!-- ==========  CALIBRATE (references) ========== -->
+    <section class="calibrate">
+      <h2 class="section-title">Train the Tribunal</h2>
+      <p class="section-sub">Add reference photos and tag how drunk that person actually was. The more you give it, the sharper the read.</p>
+
+      <label class="ref-add">
+        <input type="file" id="refInput" accept="image/*" multiple hidden>
+        <span class="ref-add-plus">+</span>
+        <span>Add reference photos</span>
+      </label>
+
+      <div class="ref-grid" id="refList"></div>
+
+      <button class="btn btn-ghost btn-tiny" id="clearRefs" hidden>Clear all references</button>
     </section>
+
   </main>
 
   <footer class="footer">
-    <svg class="footer-palm" viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
-    <p>Brewed at sea level &middot; squeezed from real palm trees &middot; 805 forever.</p>
-    <p class="footer-fine">No livers were consulted in the making of this verdict.</p>
-    <svg class="footer-palm flip" viewBox="0 0 200 600" aria-hidden="true"><use href="#palm"/></svg>
+    <svg class="foot-palm" viewBox="0 0 60 90"><use href="#palm-mini"/></svg>
+    <p>Brewed at sea level. 805 forever.</p>
+    <p class="foot-fine">Not medical, legal, or actually scientific advice.</p>
   </footer>
+
+  <!-- Hidden work canvas for image analysis -->
+  <canvas id="workCanvas" width="320" height="320" hidden></canvas>
 
   <script src="script.js"></script>
 </body>

@@ -1,297 +1,289 @@
 /* ==========================================================================
-   THE STATE STREET SOBRIETY INDEX
-   Photo-based drunk rating, calibrated by your own references.
-   Everything runs locally. No uploads. The palm trees are watching though.
+   805 SOBRIETY — live camera, local image analysis, drunk verdict 1-10
    ========================================================================== */
 
 (() => {
   'use strict';
 
-  // ----- DOM refs ---------------------------------------------------------
-  const dropzone     = document.getElementById('dropzone');
-  const fileInput    = document.getElementById('fileInput');
-  const cameraInput  = document.getElementById('cameraInput');
-  const preview      = document.getElementById('preview');
-  const previewImg   = document.getElementById('previewImg');
-  const rateBtn      = document.getElementById('rateBtn');
-  const clearBtn     = document.getElementById('clearBtn');
-  const workCanvas   = document.getElementById('workCanvas');
+  // ----- DOM -------------------------------------------------------------
+  const $ = id => document.getElementById(id);
+  const camFrame    = $('camFrame');
+  const camIdle     = $('camIdle');
+  const camBar      = $('camBar');
+  const reviewBar   = $('reviewBar');
+  const camHint     = $('camHint');
+  const camFlash    = $('camFlash');
+  const camScan     = $('camScan');
+  const camReticle  = $('camReticle');
+  const video       = $('video');
+  const snap        = $('snap');
+  const startCam    = $('startCam');
+  const pickInstead = $('pickInstead');
+  const fileInput   = $('fileInput');
+  const flipBtn     = $('flipBtn');
+  const shutterBtn  = $('shutterBtn');
+  const retakeBtn   = $('retakeBtn');
+  const rateBtn     = $('rateBtn');
+  const workCanvas  = $('workCanvas');
 
-  const result       = document.getElementById('result');
-  const meterFill    = document.getElementById('meterFill');
-  const meterNeedle  = document.getElementById('meterNeedle');
-  const scoreNum     = document.getElementById('scoreNum');
-  const verdictTitle = document.getElementById('verdictTitle');
-  const verdictFlav  = document.getElementById('verdictFlavor');
-  const receiptList  = document.getElementById('receiptList');
-  const receiptDate  = document.getElementById('receiptDate');
-  const receiptRx    = document.getElementById('receiptRx');
-  const shareBtn     = document.getElementById('shareBtn');
-  const againBtn     = document.getElementById('againBtn');
+  const result      = $('result');
+  const resultClose = $('resultClose');
+  const scoreNum    = $('scoreNum');
+  const scoreArc    = $('scoreArc');
+  const verdictTitle= $('verdictTitle');
+  const verdictFlav = $('verdictFlavor');
+  const verdictRx   = $('verdictRx');
+  const receiptList = $('receiptList');
+  const shareBtn    = $('shareBtn');
+  const againBtn    = $('againBtn');
 
-  const refInput     = document.getElementById('refInput');
-  const refList      = document.getElementById('refList');
-  const clearRefsBtn = document.getElementById('clearRefs');
+  const refInput    = $('refInput');
+  const refList     = $('refList');
+  const clearRefsBtn= $('clearRefs');
 
-  // ----- State ------------------------------------------------------------
-  const REF_KEY = 'sb-sobriety-refs-v1';
-  let currentImage = null;     // HTMLImageElement
-  let currentFeatures = null;  // last computed features
+  // ----- State -----------------------------------------------------------
+  const REF_KEY = 'sb-sobriety-refs-v2';
+  let stream = null;
+  let facing = 'user';      // 'user' or 'environment'
+  let capturedImg = null;   // Image element of the current snapshot
   let lastScore = null;
   let lastVerdict = null;
 
-  // ----- Verdict copy -----------------------------------------------------
+  // Initial UI state: idle (waiting on user to start camera)
+  setIdle();
+
+  // ----- Verdict text ----------------------------------------------------
   const VERDICTS = [
-    { // 1
-      title: "Mission Bell",
-      flavor: "Sober as 6 a.m. mass at the Old Mission. Disturbingly hydrated. Possibly judging you.",
-      rx: "Reward with one (1) acai bowl from Backyard Bowls."
-    },
-    { // 2
-      title: "Backyard Bowl",
-      flavor: "Smoothie-in-hand energy. Could be at the after-party, would not know.",
-      rx: "Light kombucha. Maybe a little flirting. Stay the course."
-    },
-    { // 3
-      title: "One IPA at Brass Bear",
-      flavor: "Pleasant. Cheeks pink-adjacent. Has begun to talk about Santa Ynez AVAs.",
-      rx: "One more pint, then water. Yes, really. Water."
-    },
-    { // 4
-      title: "Funk Zone Float",
-      flavor: "Two pours into the Urban Wine Trail. Tote bag fully deployed. Peak hospitality.",
-      rx: "Pretzel. Stretch. Refuse the third tasting flight."
-    },
-    { // 5
-      title: "Sandbar Survivor",
-      flavor: "Solid buzz. Eyes are 60% open, 100% sincere. Has opinions about Stearns Wharf parking.",
-      rx: "Tacos. A whole basket. Order them yourself, do not delegate."
-    },
-    { // 6
-      title: "Joe's Cafe Mai Tai",
-      flavor: "The legendary mai tai is hitting. Has, against all advice, ordered a second.",
-      rx: "Walk to the beach. Look at one (1) pelican. Re-evaluate."
-    },
-    { // 7
-      title: "Wildcat Wobble",
-      flavor: "State Street is rotating at a leisurely 0.5 RPM. Has loudly declared love for at least one stranger.",
-      rx: "Hand over the keys. Hand over the phone. Get a Lyft."
-    },
-    { // 8
-      title: "Stearns Wharf Stumble",
-      flavor: "One wrong step from the Pacific. Believes the seagulls are listening. They are.",
-      rx: "Sit down. On a bench. Inland-facing. Drink water."
-    },
-    { // 9
-      title: "Isla Vista Insomniac",
-      flavor: "DP party went a little too far. Currently barefoot. Phone has 7%.",
-      rx: "Tap water. Big slice of pizza. Bed, immediately, alone."
-    },
-    { // 10
-      title: "Found-on-the-Beach-at-Dawn",
-      flavor: "Sunrise at Leadbetter, sand in places sand should not be. Will swear off tequila.",
-      rx: "Gatorade. Greasy breakfast at Esau's. Apologize to everyone you texted."
-    }
+    { title: "Mission Bell",                flavor: "Sober as 6 a.m. mass at the Old Mission. Disturbingly hydrated.",                 rx: "One acai bowl from Backyard Bowls. You earned it." },
+    { title: "Backyard Bowl",               flavor: "Smoothie-in-hand energy. A walking yoga retreat.",                                  rx: "Light kombucha. Stay the course." },
+    { title: "One IPA at Brass Bear",       flavor: "Cheeks pink-adjacent. Suddenly an expert on the Santa Ynez AVA.",                  rx: "One more pint. Then water. Yes, water." },
+    { title: "Funk Zone Float",             flavor: "Two pours into the Urban Wine Trail. Tote bag deployed. Peak hospitality.",        rx: "Pretzel. Stretch. Refuse the third tasting." },
+    { title: "Sandbar Survivor",            flavor: "Solid buzz. Eyes 60% open, 100% sincere. Has Stearns Wharf parking opinions.",     rx: "Tacos. A whole basket. Order them yourself." },
+    { title: "Joe's Mai Tai",               flavor: "The legendary Joe's mai tai is hitting. Has, against all advice, ordered a second.", rx: "Walk to the beach. Look at one (1) pelican." },
+    { title: "Wildcat Wobble",              flavor: "State Street is rotating at a leisurely 0.5 RPM. Loves a stranger now.",           rx: "Hand over the keys. Hand over the phone. Lyft." },
+    { title: "Stearns Wharf Stumble",       flavor: "One wrong step from the Pacific. Believes the seagulls are listening. They are.",  rx: "Sit. On a bench. Inland-facing. Drink water." },
+    { title: "Isla Vista Insomniac",        flavor: "DP party went too far. Currently barefoot. Phone at 7%.",                          rx: "Tap water. Big slice of pizza. Bed, alone." },
+    { title: "Found-on-the-Beach-at-Dawn",  flavor: "Sunrise at Leadbetter, sand in places sand should not be. Will swear off tequila.", rx: "Gatorade. Esau's breakfast. Apologize to everyone." }
   ];
 
-  // Random witty receipt notes per range
   const RECEIPT_NOTES = [
-    [ // low
-      "Could probably do my taxes",
-      "Eyes alarmingly open",
-      "Posture: librarian-grade"
-    ],
-    [ // mid
-      "Vibes: vacationing",
-      "Could parallel park, but slowly",
-      "Speaking entirely in restaurant recommendations"
-    ],
-    [ // high
-      "Vibes: aggressively un-ironic",
-      "Has declared 'I love this song' to silence",
-      "Believes they invented karaoke"
-    ],
-    [ // very high
-      "Walking on a noticeable diagonal",
-      "Lost one shoe, gained one phone number",
-      "Convinced the seagulls owe them money"
-    ]
+    ["Could probably do my taxes", "Eyes alarmingly open", "Posture: librarian-grade"],
+    ["Vibes: vacationing", "Could parallel park, slowly", "Speaking only in restaurant recs"],
+    ["Vibes: aggressively un-ironic", "Has declared 'I love this song' to silence", "Believes they invented karaoke"],
+    ["Walking on a noticeable diagonal", "Lost one shoe, gained one number", "Convinced seagulls owe them money"]
   ];
 
-  // ----- Drag & drop / file pick -----------------------------------------
-  ['dragenter','dragover'].forEach(ev =>
-    dropzone.addEventListener(ev, e => {
-      e.preventDefault();
-      dropzone.classList.add('is-drag');
-    })
-  );
-  ['dragleave','drop'].forEach(ev =>
-    dropzone.addEventListener(ev, e => {
-      e.preventDefault();
-      dropzone.classList.remove('is-drag');
-    })
-  );
-  dropzone.addEventListener('drop', e => {
-    const f = e.dataTransfer?.files?.[0];
-    if (f) loadFile(f);
+  // ======================================================================
+  // CAMERA
+  // ======================================================================
+  function setIdle() {
+    camFrame.classList.add('idle');
+    camFrame.classList.remove('has-photo');
+    camBar.hidden = true;
+    reviewBar.hidden = true;
+    camScan.hidden = true;
+    video.hidden = true;
+    snap.hidden = true;
+    camHint.textContent = "Front camera works best. Get the face filling the frame.";
+  }
+
+  function setLive() {
+    camFrame.classList.remove('idle', 'has-photo');
+    camBar.hidden = false;
+    reviewBar.hidden = true;
+    camScan.hidden = true;
+    video.hidden = false;
+    snap.hidden = true;
+    camHint.textContent = "Tap the big button to capture. Tap the icon to flip cameras.";
+  }
+
+  function setReview() {
+    camFrame.classList.remove('idle');
+    camFrame.classList.add('has-photo');
+    camBar.hidden = true;
+    reviewBar.hidden = false;
+    camScan.hidden = true;
+    video.hidden = true;
+    snap.hidden = false;
+    camHint.textContent = "Look good? Tap Rate me. Or retake.";
+  }
+
+  async function startStream() {
+    // iOS Safari: getUserMedia must be called from a user gesture handler.
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast("This browser doesn't support live camera. Use the gallery icon.");
+      fileInput.click();
+      return;
+    }
+
+    try {
+      // Stop any existing stream
+      stopStream();
+
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: facing },
+          width:  { ideal: 1280 },
+          height: { ideal: 1280 }
+        }
+      };
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      video.classList.toggle('user', facing === 'user'); // mirror selfie
+      // iOS: must call play after metadata loads
+      try { await video.play(); } catch {}
+      setLive();
+    } catch (err) {
+      console.warn(err);
+      const name = err.name || '';
+      if (name === 'NotAllowedError' || name === 'SecurityError') {
+        toast("Camera permission denied. Tap the gallery icon to upload instead.");
+      } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+        toast("No camera found. Use the gallery icon.");
+      } else {
+        toast("Couldn't start camera. Try the gallery icon.");
+      }
+    }
+  }
+
+  function stopStream() {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      video.srcObject = null;
+    }
+  }
+
+  function captureFrame() {
+    if (!video.videoWidth) return;
+
+    // Draw the visible (mirrored if selfie) view to a canvas
+    const w = video.videoWidth, h = video.videoHeight;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    if (facing === 'user') {
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataURL = c.toDataURL('image/jpeg', 0.88);
+
+    // Show flash
+    camFlash.classList.remove('fire');
+    void camFlash.offsetWidth;
+    camFlash.classList.add('fire');
+
+    // Build image element for analysis
+    const img = new Image();
+    img.onload = () => {
+      capturedImg = img;
+      snap.src = dataURL;
+      stopStream();
+      setReview();
+    };
+    img.src = dataURL;
+  }
+
+  // Wire up camera controls
+  startCam.addEventListener('click', startStream);
+  pickInstead.addEventListener('click', () => fileInput.click());
+  shutterBtn.addEventListener('click', captureFrame);
+  flipBtn.addEventListener('click', async () => {
+    facing = (facing === 'user') ? 'environment' : 'user';
+    await startStream();
+  });
+  retakeBtn.addEventListener('click', async () => {
+    capturedImg = null;
+    snap.removeAttribute('src');
+    await startStream();
   });
 
   fileInput.addEventListener('change', e => {
     const f = e.target.files?.[0];
-    if (f) loadFile(f);
-  });
-  cameraInput.addEventListener('change', e => {
-    const f = e.target.files?.[0];
-    if (f) loadFile(f);
-  });
-
-  function loadFile(file) {
-    if (!file.type.startsWith('image/')) {
-      toast("That doesn't look like a photo, friend.");
-      return;
-    }
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { toast("That's not a photo."); return; }
     const reader = new FileReader();
     reader.onload = ev => {
       const img = new Image();
       img.onload = () => {
-        currentImage = img;
-        previewImg.src = img.src;
-        preview.hidden = false;
-        result.hidden = true;
-        preview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        capturedImg = img;
+        snap.src = ev.target.result;
+        stopStream();
+        setReview();
       };
       img.src = ev.target.result;
     };
-    reader.readAsDataURL(file);
-  }
-
-  clearBtn.addEventListener('click', () => {
-    currentImage = null;
-    preview.hidden = true;
-    result.hidden = true;
+    reader.readAsDataURL(f);
     fileInput.value = '';
-    cameraInput.value = '';
-    dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 
-  // ----- Feature extraction ----------------------------------------------
-  // Sample the image, focus on the center (where a face usually is),
-  // and compute: redness/flush, brightness, saturation, blur, warmth.
+  // ======================================================================
+  // ANALYSIS
+  // ======================================================================
   function extractFeatures(img) {
     const ctx = workCanvas.getContext('2d', { willReadFrequently: true });
     const W = workCanvas.width, H = workCanvas.height;
     ctx.clearRect(0, 0, W, H);
-
-    // Cover-fit so we don't squish faces
     const ratio = Math.max(W / img.width, H / img.height);
     const dw = img.width  * ratio;
     const dh = img.height * ratio;
     ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
-
     const data = ctx.getImageData(0, 0, W, H).data;
+
     const cx = W / 2, cy = H / 2;
-    const faceR = Math.min(W, H) * 0.35; // central ROI
+    const faceR = Math.min(W, H) * 0.35;
 
     let rSum=0, gSum=0, bSum=0, lumSum=0, satSum=0, n=0;
-    let rEdge=0, eN=0;
-    let warmCount=0, coolCount=0;
-    let pinkCount=0;
+    let edgeSum=0, eN=0;
+    let warm=0, cool=0, pink=0;
 
-    // Per-pixel pass
     for (let y = 0; y < H; y += 2) {
       for (let x = 0; x < W; x += 2) {
         const dx = x - cx, dy = y - cy;
-        if (dx*dx + dy*dy > faceR*faceR) continue; // only ROI
-
+        if (dx*dx + dy*dy > faceR*faceR) continue;
         const i = (y * W + x) * 4;
         const r = data[i], g = data[i+1], b = data[i+2];
-
-        rSum += r; gSum += g; bSum += b;
-
-        // luminance
+        rSum+=r; gSum+=g; bSum+=b;
         const lum = 0.299*r + 0.587*g + 0.114*b;
         lumSum += lum;
-
-        // saturation (HSV-ish)
-        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-        const sat = mx === 0 ? 0 : (mx - mn) / mx;
-        satSum += sat;
-
-        // warm vs cool tilt
-        if (r > b + 8) warmCount++;
-        else if (b > r + 8) coolCount++;
-
-        // pink-cheek detector: red dominant, modest green, decent brightness
-        if (r > 130 && r > g + 18 && r > b + 18 && lum > 90 && lum < 220) {
-          pinkCount++;
-        }
-
+        const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+        satSum += mx === 0 ? 0 : (mx - mn)/mx;
+        if (r > b + 8) warm++; else if (b > r + 8) cool++;
+        if (r > 130 && r > g+18 && r > b+18 && lum > 90 && lum < 220) pink++;
         n++;
-
-        // Cheap blur estimate via right-neighbor luminance gradient
         if (x + 2 < W) {
-          const j = (y * W + (x + 2)) * 4;
+          const j = (y * W + (x+2)) * 4;
           const lum2 = 0.299*data[j] + 0.587*data[j+1] + 0.114*data[j+2];
-          rEdge += Math.abs(lum2 - lum);
+          edgeSum += Math.abs(lum2 - lum);
           eN++;
         }
       }
     }
 
-    if (n === 0) {
-      // Fallback: just use whole frame
-      return extractFeaturesGlobal(data, W, H);
-    }
+    if (n === 0) return { luminance: .5, saturation: .5, flush: 0, warmth: 0, pink: 0, sharpness: .5, blur: .5 };
 
-    const rAvg = rSum / n, gAvg = gSum / n, bAvg = bSum / n;
-    const luminance = lumSum / n / 255;            // 0..1
-    const saturation = satSum / n;                 // 0..1
-    const flush = (rAvg - (gAvg + bAvg)/2) / 255;  // -ish 0..0.4
-    const warmth = (warmCount - coolCount) / n;    // -1..1
-    const pink = pinkCount / n;                    // 0..1
-    const sharpness = Math.min(1, (rEdge / eN) / 40); // 0..1, higher = sharper
-    const blur = 1 - sharpness;
-
-    return { luminance, saturation, flush, warmth, pink, sharpness, blur };
-  }
-
-  function extractFeaturesGlobal(data, W, H) {
-    let rSum=0, gSum=0, bSum=0, lumSum=0, satSum=0, n=0, rEdge=0, eN=0, pinkCount=0, warm=0, cool=0;
-    for (let i = 0; i < data.length; i += 16) {
-      const r=data[i], g=data[i+1], b=data[i+2];
-      rSum+=r; gSum+=g; bSum+=b;
-      const lum = 0.299*r+0.587*g+0.114*b;
-      lumSum+=lum;
-      const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
-      satSum += mx === 0 ? 0 : (mx-mn)/mx;
-      if (r > 130 && r > g+18 && r > b+18 && lum>90 && lum<220) pinkCount++;
-      if (r > b+8) warm++; else if (b > r+8) cool++;
-      n++;
-    }
+    const rAvg = rSum/n, gAvg = gSum/n, bAvg = bSum/n;
     return {
-      luminance: (lumSum/n)/255,
+      luminance:  (lumSum/n)/255,
       saturation: satSum/n,
-      flush: (rSum/n - ((gSum+bSum)/(2*n)))/255,
-      warmth: (warm-cool)/n,
-      pink: pinkCount/n,
-      sharpness: 0.5,
-      blur: 0.5
+      flush:      (rAvg - (gAvg+bAvg)/2)/255,
+      warmth:     (warm-cool)/n,
+      pink:       pink/n,
+      sharpness:  Math.min(1, (edgeSum/eN)/40),
+      blur:       1 - Math.min(1, (edgeSum/eN)/40)
     };
   }
 
-  // ----- Scoring ----------------------------------------------------------
-  // Combine features into a 1-10 score, then nudge based on closest reference.
   function scoreFeatures(f, refs) {
-    // Base components, each ~0..1, weighted to a "drunkness" sum.
     const flush     = clamp(f.flush * 4 + f.pink * 2.5, 0, 1);
     const eyeDroop  = clamp((1 - f.luminance) * 0.5 + (1 - f.sharpness) * 0.6, 0, 1);
-    const stability = clamp(f.blur, 0, 1); // higher = drunker
-    const vibe      = clamp((f.warmth + 1) / 2 * 0.6 + f.saturation * 0.4, 0, 1);
+    const stability = clamp(f.blur, 0, 1);
+    const vibe      = clamp((f.warmth + 1)/2 * 0.6 + f.saturation * 0.4, 0, 1);
 
-    // Weighted base — algorithm's own opinion (0..1)
-    let raw = (flush * 0.40) + (eyeDroop * 0.20) + (stability * 0.20) + (vibe * 0.20);
+    let raw = flush * 0.40 + eyeDroop * 0.20 + stability * 0.20 + vibe * 0.20;
 
-    // Pull toward closest reference if any
     let matched = null;
     if (refs.length) {
       let best = null;
@@ -300,22 +292,14 @@
         if (!best || d < best.d) best = { d, r };
       }
       matched = best.r;
-      // Convert ref score (1..10) to 0..1, blend ~50/50 with our raw
       const refNorm = (matched.score - 1) / 9;
-      // closer -> more weight on the ref
-      const closeness = Math.max(0, 1 - best.d * 1.4); // 0..1
-      const refWeight = 0.35 + closeness * 0.45; // 0.35..0.8
+      const closeness = Math.max(0, 1 - best.d * 1.4);
+      const refWeight = 0.35 + closeness * 0.45;
       raw = raw * (1 - refWeight) + refNorm * refWeight;
     }
 
-    // Map 0..1 to 1..10
     const score = Math.max(1, Math.min(10, Math.round(raw * 9 + 1)));
-
-    return {
-      score,
-      components: { flush, eyeDroop, stability, vibe },
-      matched
-    };
+    return { score, components: { flush, eyeDroop, stability, vibe }, matched };
   }
 
   function featureDistance(a, b) {
@@ -330,130 +314,133 @@
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-  // ----- Rate flow --------------------------------------------------------
+  // ======================================================================
+  // RATE FLOW
+  // ======================================================================
   rateBtn.addEventListener('click', async () => {
-    if (!currentImage) return;
-    rateBtn.disabled = true;
-    rateBtn.classList.add('rating-pulse');
-    rateBtn.textContent = "Tribunal deliberating...";
+    if (!capturedImg) return;
+    rateBtn.disabled = true; retakeBtn.disabled = true;
+    camScan.hidden = false;
 
-    // Tiny delay so the scanline animation can be enjoyed
-    await sleep(900 + Math.random() * 600);
+    await sleep(1100 + Math.random() * 500); // let the scanline play
 
     try {
-      const features = extractFeatures(currentImage);
-      currentFeatures = features;
-      const refs = loadRefs();
-      const out = scoreFeatures(features, refs);
+      const features = extractFeatures(capturedImg);
+      const out = scoreFeatures(features, loadRefs());
       lastScore = out.score;
       lastVerdict = VERDICTS[out.score - 1];
-      renderResult(out, features);
-    } catch (err) {
-      console.error(err);
+      revealResult(out);
+    } catch (e) {
+      console.error(e);
       toast("Tribunal had a moment. Try a different photo.");
     }
-
-    rateBtn.disabled = false;
-    rateBtn.classList.remove('rating-pulse');
-    rateBtn.textContent = "Rate the Damage →";
+    camScan.hidden = true;
+    rateBtn.disabled = false; retakeBtn.disabled = false;
   });
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-  function renderResult(out, f) {
+  function revealResult(out) {
     const v = VERDICTS[out.score - 1];
-    const pct = ((out.score - 1) / 9) * 100;
 
-    meterFill.style.width = pct + '%';
-    meterNeedle.style.left = pct + '%';
-    scoreNum.textContent = out.score;
     verdictTitle.textContent = v.title;
-    verdictFlav.textContent = v.flavor;
-    receiptDate.textContent = formatNow();
-    receiptRx.textContent = v.rx;
+    verdictFlav.textContent  = v.flavor;
+    verdictRx.textContent    = v.rx;
 
-    // Build receipt itemization
+    // Receipt
     receiptList.innerHTML = '';
-    addReceiptItem("Cheek flush index",   labelize(out.components.flush));
-    addReceiptItem("Eye droop coeff.",    labelize(out.components.eyeDroop));
-    addReceiptItem("Photo stability",     labelize(1 - out.components.stability) + " (steadier=lower)");
-    addReceiptItem("Sunset vibe match",   labelize(out.components.vibe));
-    if (out.matched) {
-      addReceiptItem("Closest reference", "#" + (out.matched.id || '?').toString().slice(-4) + " ("+ out.matched.score +"/10)");
-    } else {
-      addReceiptItem("Closest reference", "none on file");
-    }
-    // Funny note
+    pushReceipt("Cheek flush",         pct(out.components.flush));
+    pushReceipt("Eye droop",           pct(out.components.eyeDroop));
+    pushReceipt("Photo stability",     pct(1 - out.components.stability) + " (steadier=lower)");
+    pushReceipt("Sunset vibe",         pct(out.components.vibe));
+    pushReceipt("Closest reference",   out.matched ? `#${(out.matched.id+'').slice(-4)} (${out.matched.score}/10)` : "none on file");
     const tier = out.score <= 3 ? 0 : out.score <= 6 ? 1 : out.score <= 8 ? 2 : 3;
     const notes = RECEIPT_NOTES[tier];
-    addReceiptItem("Field note", notes[Math.floor(Math.random() * notes.length)]);
+    pushReceipt("Field note", notes[Math.floor(Math.random() * notes.length)]);
 
+    // Score number — count up animation
     result.hidden = false;
-    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.body.style.overflow = 'hidden';
+    countUp(scoreNum, 0, out.score, 900);
+
+    // Ring fill (circumference 2*pi*52 ≈ 326.7)
+    const C = 326.7;
+    const target = C - (C * out.score / 10);
+    requestAnimationFrame(() => {
+      scoreArc.style.strokeDashoffset = target;
+    });
   }
 
-  function addReceiptItem(label, value) {
+  function pushReceipt(lbl, val) {
     const li = document.createElement('li');
-    const a = document.createElement('span'); a.className = 'lbl'; a.textContent = label;
-    const b = document.createElement('span'); b.className = 'val'; b.textContent = value;
+    const a = document.createElement('span'); a.className = 'lbl'; a.textContent = lbl;
+    const b = document.createElement('span'); b.className = 'val'; b.textContent = val;
     li.append(a, b);
     receiptList.appendChild(li);
   }
 
-  function labelize(v) {
-    const pct = Math.round(v * 100);
-    if (pct < 20) return pct + "% (negligible)";
-    if (pct < 40) return pct + "% (light)";
-    if (pct < 60) return pct + "% (notable)";
-    if (pct < 80) return pct + "% (significant)";
-    return pct + "% (extreme)";
+  function pct(v) {
+    const p = Math.round(v * 100);
+    if (p < 20) return p + "% negligible";
+    if (p < 40) return p + "% light";
+    if (p < 60) return p + "% notable";
+    if (p < 80) return p + "% significant";
+    return p + "% extreme";
   }
 
-  function formatNow() {
-    const d = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  function countUp(el, from, to, ms) {
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(from + (to - from) * eased);
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = to;
+    }
+    requestAnimationFrame(step);
   }
 
-  // ----- Share / again ---------------------------------------------------
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // Close result
+  function closeResult() {
+    result.hidden = true;
+    document.body.style.overflow = '';
+    // Reset arc for next time
+    scoreArc.style.strokeDashoffset = 326.7;
+  }
+  resultClose.addEventListener('click', closeResult);
+  result.addEventListener('click', e => { if (e.target === result) closeResult(); });
+  againBtn.addEventListener('click', async () => {
+    closeResult();
+    capturedImg = null;
+    await startStream();
+  });
   shareBtn.addEventListener('click', async () => {
     if (lastScore == null) return;
-    const txt = `\u{1F334} The State Street Sobriety Index \u{1F334}
-Verdict: ${lastVerdict.title} (${lastScore}/10)
+    const txt = `\u{1F334} 805 Sobriety verdict: ${lastVerdict.title} — ${lastScore}/10
 "${lastVerdict.flavor}"
-Rx: ${lastVerdict.rx}
-- Brought to you by the palms of 805.`;
+Rx: ${lastVerdict.rx}`;
     try {
-      await navigator.clipboard.writeText(txt);
-      toast("Verdict copied. Share responsibly.");
-    } catch {
-      toast("Couldn't copy. The seagulls intercepted it.");
-    }
-  });
-
-  againBtn.addEventListener('click', () => {
-    result.hidden = true;
-    preview.hidden = true;
-    currentImage = null;
-    fileInput.value = '';
-    cameraInput.value = '';
-    dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (navigator.share) {
+        await navigator.share({ text: txt });
+      } else {
+        await navigator.clipboard.writeText(txt);
+        toast("Verdict copied. Share responsibly.");
+      }
+    } catch { /* user cancelled */ }
   });
 
   // ======================================================================
-  // REFERENCE PHOTOS (calibration)
+  // REFERENCES
   // ======================================================================
   refInput.addEventListener('change', async e => {
     const files = [...e.target.files];
-    for (const f of files) {
-      await addReference(f);
-    }
+    for (const f of files) await addReference(f);
     refInput.value = '';
     renderRefs();
   });
 
   clearRefsBtn.addEventListener('click', () => {
-    if (!confirm("Clear all reference photos? This cannot be undone.")) return;
+    if (!confirm("Clear all reference photos?")) return;
     localStorage.removeItem(REF_KEY);
     renderRefs();
   });
@@ -464,16 +451,12 @@ Rx: ${lastVerdict.rx}
       reader.onload = ev => {
         const img = new Image();
         img.onload = () => {
-          // Compute features for this reference
           const features = extractFeatures(img);
-          // Make a tiny thumbnail for display (so we don't bloat localStorage)
-          const thumb = makeThumbnail(img, 200);
+          const thumb = makeThumbnail(img, 240);
           const refs = loadRefs();
           refs.push({
             id: Date.now() + '_' + Math.floor(Math.random() * 9999),
-            score: 5,
-            thumb,
-            features
+            score: 5, thumb, features
           });
           saveRefs(refs);
           resolve();
@@ -489,43 +472,32 @@ Rx: ${lastVerdict.rx}
     const c = document.createElement('canvas');
     c.width = c.height = size;
     const ctx = c.getContext('2d');
-    const ratio = Math.max(size / img.width, size / img.height);
-    const dw = img.width * ratio, dh = img.height * ratio;
-    ctx.drawImage(img, (size - dw)/2, (size - dh)/2, dw, dh);
+    const ratio = Math.max(size/img.width, size/img.height);
+    const dw = img.width*ratio, dh = img.height*ratio;
+    ctx.drawImage(img, (size-dw)/2, (size-dh)/2, dw, dh);
     return c.toDataURL('image/jpeg', 0.78);
   }
 
   function loadRefs() {
-    try {
-      const raw = localStorage.getItem(REF_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(REF_KEY) || '[]'); }
+    catch { return []; }
   }
   function saveRefs(refs) {
-    try {
-      localStorage.setItem(REF_KEY, JSON.stringify(refs));
-    } catch (e) {
-      // Quota — drop oldest until it fits
+    try { localStorage.setItem(REF_KEY, JSON.stringify(refs)); }
+    catch {
       while (refs.length > 1) {
         refs.shift();
         try { localStorage.setItem(REF_KEY, JSON.stringify(refs)); return; } catch {}
       }
-      toast("Out of browser storage for refs. Trim and try again.");
+      toast("Out of browser storage. Trim refs.");
     }
   }
 
   function renderRefs() {
     const refs = loadRefs();
     refList.innerHTML = '';
-    if (!refs.length) {
-      const empty = document.createElement('p');
-      empty.style.cssText = "color:var(--paper);text-shadow:1px 1px 0 rgba(0,0,0,.3);grid-column:1/-1;margin:0;font-size:.9rem;opacity:.85;";
-      empty.textContent = "No references yet. Add a few photos and tag each one with how drunk that person actually was.";
-      refList.appendChild(empty);
-      return;
-    }
+    clearRefsBtn.hidden = refs.length === 0;
+    if (!refs.length) return;
     for (const r of refs) {
       const card = document.createElement('div');
       card.className = 'ref-card';
@@ -536,14 +508,12 @@ Rx: ${lastVerdict.rx}
 
       const body = document.createElement('div');
       body.className = 'ref-body';
-
       const lbl = document.createElement('label');
-      lbl.textContent = "Drunkness";
+      lbl.textContent = "How drunk?";
       body.appendChild(lbl);
 
       const range = document.createElement('input');
-      range.type = 'range';
-      range.min = 1; range.max = 10; range.step = 1;
+      range.type = 'range'; range.min = 1; range.max = 10; range.step = 1;
       range.value = r.score;
       body.appendChild(range);
 
@@ -553,27 +523,19 @@ Rx: ${lastVerdict.rx}
       sc.className = 'ref-score';
       sc.textContent = r.score + '/10';
       const del = document.createElement('button');
-      del.className = 'ref-del';
-      del.type = 'button';
-      del.textContent = "remove";
+      del.type = 'button'; del.className = 'ref-del'; del.textContent = "remove";
       row.append(sc, del);
       body.appendChild(row);
 
-      range.addEventListener('input', () => {
-        sc.textContent = range.value + '/10';
-      });
+      range.addEventListener('input', () => sc.textContent = range.value + '/10');
       range.addEventListener('change', () => {
         const list = loadRefs();
         const item = list.find(x => x.id === r.id);
-        if (item) {
-          item.score = +range.value;
-          saveRefs(list);
-        }
+        if (item) { item.score = +range.value; saveRefs(list); }
       });
       del.addEventListener('click', () => {
         const list = loadRefs().filter(x => x.id !== r.id);
-        saveRefs(list);
-        renderRefs();
+        saveRefs(list); renderRefs();
       });
 
       card.append(thumb, body);
@@ -581,7 +543,7 @@ Rx: ${lastVerdict.rx}
     }
   }
 
-  // ----- Toast helper -----------------------------------------------------
+  // ----- Toast -----------------------------------------------------------
   let toastEl = null;
   function toast(msg) {
     if (!toastEl) {
@@ -592,16 +554,15 @@ Rx: ${lastVerdict.rx}
     toastEl.textContent = msg;
     toastEl.classList.add('show');
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
+    toast._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
   }
 
-  // ----- Init -------------------------------------------------------------
+  // ----- Init ------------------------------------------------------------
   renderRefs();
 
-  // Click anywhere on the dropzone (but not the buttons) opens file picker
-  dropzone.addEventListener('click', e => {
-    if (e.target.closest('label.btn')) return; // labels handle their own input
-    fileInput.click();
+  // Pause stream when tab is hidden (saves battery on iOS)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopStream();
   });
 
 })();

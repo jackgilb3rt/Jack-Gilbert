@@ -3,105 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jack Gilbert</title>
+  <title>The Brain Trust &middot; Beer Tracker</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <div class="ambient-bg"></div>
+
   <nav class="nav">
     <div class="nav-inner">
-      <a href="#" class="nav-logo">JG</a>
+      <a href="#/" class="nav-logo">
+        <span class="logo-mark">&#127866;</span>
+        <span class="logo-text">The Brain Trust</span>
+      </a>
       <ul class="nav-links">
-        <li><a href="#about">About</a></li>
-        <li><a href="#projects">Projects</a></li>
-        <li><a href="#contact">Contact</a></li>
+        <li><a href="#/" data-route="/">Tonight</a></li>
+        <li><a href="#/leaderboard" data-route="/leaderboard">Hall of Fame</a></li>
+        <li><a href="#/roster" data-route="/roster">Roster</a></li>
+        <li><a href="#/log" data-route="/log">Log</a></li>
+        <li><a href="#/lore" data-route="/lore">Lore</a></li>
       </ul>
+      <div class="nav-session">
+        <span class="session-dot" id="sessionDot"></span>
+        <span id="sessionLabel">No session</span>
+      </div>
     </div>
   </nav>
 
-  <header class="hero">
-    <div class="hero-content">
-      <p class="hero-greeting">Hi, I'm</p>
-      <h1 class="hero-name">Jack Gilbert</h1>
-      <p class="hero-tagline">Developer &middot; Creator &middot; Problem Solver</p>
-      <div class="hero-cta">
-        <a href="#projects" class="btn btn-primary">View My Work</a>
-        <a href="#contact" class="btn btn-secondary">Get In Touch</a>
-      </div>
-    </div>
-    <div class="hero-bg-shape"></div>
-  </header>
-
-  <section id="about" class="section about">
-    <div class="container">
-      <h2 class="section-title">About Me</h2>
-      <div class="about-content">
-        <div class="about-text">
-          <p>
-            I'm a passionate developer who loves building things for the web.
-            I focus on creating clean, user-friendly experiences that solve real problems.
-          </p>
-          <p>
-            When I'm not coding, you can find me exploring new technologies,
-            contributing to open source, or learning something new.
-          </p>
-        </div>
-        <div class="skills">
-          <span class="skill-tag">JavaScript</span>
-          <span class="skill-tag">HTML &amp; CSS</span>
-          <span class="skill-tag">React</span>
-          <span class="skill-tag">Node.js</span>
-          <span class="skill-tag">Python</span>
-          <span class="skill-tag">Git</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="projects" class="section projects">
-    <div class="container">
-      <h2 class="section-title">Projects</h2>
-      <div class="project-grid">
-        <div class="project-card">
-          <div class="project-icon">01</div>
-          <h3>Project One</h3>
-          <p>A brief description of your first project and what makes it interesting.</p>
-          <a href="#" class="project-link">View Project &rarr;</a>
-        </div>
-        <div class="project-card">
-          <div class="project-icon">02</div>
-          <h3>Project Two</h3>
-          <p>A brief description of your second project and the problem it solves.</p>
-          <a href="#" class="project-link">View Project &rarr;</a>
-        </div>
-        <div class="project-card">
-          <div class="project-icon">03</div>
-          <h3>Project Three</h3>
-          <p>A brief description of your third project and the technologies used.</p>
-          <a href="#" class="project-link">View Project &rarr;</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="contact" class="section contact">
-    <div class="container">
-      <h2 class="section-title">Get In Touch</h2>
-      <p class="contact-text">
-        I'm always open to new opportunities and collaborations.
-        Feel free to reach out!
-      </p>
-      <div class="contact-links">
-        <a href="https://github.com/jackgilb3rt" class="contact-btn" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="mailto:hello@jackgilbert.com" class="contact-btn">Email</a>
-        <a href="https://linkedin.com" class="contact-btn" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-      </div>
-    </div>
-  </section>
+  <main id="app" class="app"></main>
 
   <footer class="footer">
-    <p>&copy; 2026 Jack Gilbert. All rights reserved.</p>
+    <p>The Brain Trust &middot; Drink responsibly &middot; Track ruthlessly</p>
   </footer>
 
+  <!-- Templates -->
+  <template id="tpl-home">
+    <section class="hero">
+      <div class="hero-content">
+        <p class="hero-eyebrow">Tonight at the round table</p>
+        <h1 class="hero-title">The Brain Trust</h1>
+        <p class="hero-sub">Six minds. One mission. <span class="amber">Crush beers, track everything.</span></p>
+        <div class="session-controls">
+          <button id="startSessionBtn" class="btn btn-primary">Start a Session</button>
+          <button id="endSessionBtn" class="btn btn-ghost" hidden>End Session</button>
+          <input id="sessionName" class="session-input" placeholder="Session name (e.g. Friday Night)" hidden>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="heroNightTotal">0</span>
+          <span class="hero-stat-label">Beers tonight</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="heroAllTimeTotal">0</span>
+          <span class="hero-stat-label">All-time</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="heroSessions">0</span>
+          <span class="hero-stat-label">Sessions logged</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Tonight's Tracker</h2>
+        <p class="section-sub">Tap a card to add a beer. Hold or right-click to remove. Long press for beer style.</p>
+      </div>
+      <div class="tracker-grid" id="trackerGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Live Leaderboard</h2>
+        <p class="section-sub">Who's leading the round table tonight</p>
+      </div>
+      <div class="live-board" id="liveBoard"></div>
+    </section>
+  </template>
+
+  <template id="tpl-leaderboard">
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Hall of Fame</h2>
+        <p class="section-sub">All-time rankings, records, and bragging rights</p>
+      </div>
+      <div class="podium" id="podium"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>All-Time Beers per Member</h3>
+            <span class="card-tag">Cumulative</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chartAllTime"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Average per Session</h3>
+            <span class="card-tag">Pace</span>
+          </div>
+          <div class="chart-wrap"><canvas id="chartAvg"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Last 8 Sessions</h3>
+            <span class="card-tag">Trend</span>
+          </div>
+          <div class="chart-wrap chart-tall"><canvas id="chartTrend"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Beer Style Mix (Group)</h3>
+            <span class="card-tag">Palate</span>
+          </div>
+          <div class="chart-wrap chart-tall"><canvas id="chartStyle"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Records &amp; Awards</h3>
+          <span class="card-tag">Folklore</span>
+        </div>
+        <div class="records" id="records"></div>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-roster">
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">The Roster</h2>
+        <p class="section-sub">Six legends. Click a card to dive into their stat page.</p>
+      </div>
+      <div class="roster-grid" id="rosterGrid"></div>
+    </section>
+  </template>
+
+  <template id="tpl-member">
+    <section class="member-page" id="memberPage"></section>
+  </template>
+
+  <template id="tpl-log">
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">The Log</h2>
+        <p class="section-sub">Every beer, every session, in chronological order</p>
+      </div>
+      <div class="log-toolbar">
+        <select id="logFilter" class="select">
+          <option value="all">All members</option>
+        </select>
+        <button id="clearTonightBtn" class="btn btn-ghost btn-small">Clear tonight</button>
+        <button id="resetAllBtn" class="btn btn-danger btn-small">Reset everything</button>
+      </div>
+      <div class="log-list" id="logList"></div>
+    </section>
+  </template>
+
+  <template id="tpl-lore">
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">Lore of the Brain Trust</h2>
+        <p class="section-sub">Origin myths, sacred rituals, and inside jokes (mostly fictional, all canon)</p>
+      </div>
+      <div class="lore" id="loreContent"></div>
+    </section>
+  </template>
+
+  <template id="tpl-404">
+    <section class="section center">
+      <h2 class="section-title">404 &mdash; Empty Pint</h2>
+      <p>This page is as dry as a Tuesday night. <a href="#/">Head back to the bar</a>.</p>
+    </section>
+  </template>
+
+  <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

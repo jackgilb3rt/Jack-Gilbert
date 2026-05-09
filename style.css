@@ -22,6 +22,11 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
 
+/* Make the HTML `hidden` attribute always win over our `display:` rules.
+   Without this, .result/.cam-bar/.review-bar/#video/#snap stay visible
+   even when JS sets element.hidden = true. */
+[hidden] { display: none !important; }
+
 html { background: var(--ink); }
 body {
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
